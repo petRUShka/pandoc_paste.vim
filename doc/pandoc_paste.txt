@@ -1,0 +1,146 @@
+*pandoc_paste.txt*  Obsidian-like paste for vim, e.g. converting HTML to md/org/latex on the fly
+
+Author: petRUShka
+License: MIT license
+
+==============================================================================
+CONTENTS                                                      *pandoc_paste-contents*
+
+Introduction                           |pandoc_paste-intro|
+Requirements                           |pandoc_paste-req|
+Configuration & Usage                  |pandoc_paste-config|
+Commands & Mappings                    |pandoc_paste-commands|
+Variables                              |pandoc_paste-vars|
+Troubleshooting                        |pandoc_paste-troubleshoot|
+Changelog                              |pandoc_paste-changelog|
+
+==============================================================================
+INTRODUCTION *pandoc_paste-intro*
+
+*pandoc_paste.vim* allows you to paste rich HTML from the clipboard directly
+into Vim/Neovim buffers, converting it to the appropriate format via
+`Pandoc`. It provides Obsidian-like functionality for converting HTML
+to Markdown. Additionally, depending on your file type:
+
+- `markdown` or `pandoc` -> HTML is converted into Markdown
+- `org` -> HTML is converted into Org format
+- `latex` -> HTML is converted into LaTeX
+- `others` -> Raw text is pasted
+
+  Note: Mac OS and Windows have not been tested, so testing and PRs are welcome.
+
+> `Obsidian`: <https://help.obsidian.md/User+interface/Drag+and+drop>
+> `Pandoc`: <https://pandoc.org/>
+
+==============================================================================
+REQUIREMENTS *pandoc_paste-req*
+
+1. Pandoc ~
+   Make sure `pandoc` is installed and accessible in your $PATH.  
+   See <https://pandoc.org> for downloads and documentation.
+
+2. Clipboard Tools ~
+   - `Linux (X11)`: `xclip` (or `xsel`) recommended if you want HTML support.  
+     - <https://github.com/astrand/xclip>
+   - `Wayland`: `wl-paste` from wl-clipboard might be needed.  
+     - <https://github.com/bugaevc/wl-clipboard>
+   - `macOS`: `pbpaste` is used by default, but it often only provides plain text.  
+     - For more advanced RTF/HTML retrieval, you’d need AppleScript solutions.  
+   - `Windows`: `powershell.exe -noprofile -command Get-Clipboard` is used.  
+     - May not expose HTML from all apps.
+
+==============================================================================
+CONFIGURATION & USAGE *pandoc_paste-config*
+
+-------------------
+Default Key Mapping
+
+By default, `<leader>p` in normal mode calls `:PandocPaste`, which:
+
+1. Attempts to retrieve `text/html` from the system clipboard (if available).
+2. If the current filetype is recognized (markdown, pandoc, org, latex),
+   runs Pandoc to convert HTML -> the appropriate format.
+3. Otherwise, it just pastes raw text (no conversion).
+
+> Example: >vim
+    nnoremap <silent> <leader>p :PandocPaste<CR> 
+>
+-----------------------------
+Disabling the Default Mapping
+
+Set `g:pandoc_paste_no_mapping = 1` before loading the plugin (e.g., in your vimrc)
+if you prefer to define your own keymaps. For example: >vim
+
+    let g:pandoc_paste_no_mapping = 1
+>
+
+Then you can create your own mapping: >vim
+
+    nnoremap <silent> <leader>h :PandocPaste<CR>
+<
+==============================================================================
+COMMANDS & MAPPINGS *pandoc_paste-commands*
+
+- `:PandocPaste`
+  If your filetype is Markdown, Org or LaTeX plugin pipes the clipboard’s HTML
+  through Pandoc. If HTML is not available, or the buffer has other filetype,
+  plugin pastes the clipboard content as raw text.
+
+- `<leader>p`
+  The normal-mode mapping to invoke `:PandocPaste`. If you do not want
+  this default mapping, set `g:pandoc_paste_no_mapping = 1` in your vimrc.
+
+==============================================================================
+VARIABLES *pandoc_paste-vars*
+
+- `g:pandoc_paste_command` (string)  
+  If set, this overrides the default system clipboard command. For example, on
+  Wayland you might do: >vim
+  
+      let g:pandoc_paste_command = 'wl-paste --type text/html'
+<
+  
+  If your system or workflow uses a different command for copying HTML, specify
+  it here.
+
+- `g:pandoc_paste_no_mapping` (number)  
+  Defaults to `0`. If set to `1` before the plugin loads, no `<leader>p` mapping
+  is created. You can then define your own mapping or rely on `:PandocPaste`.
+
+==============================================================================
+TROUBLESHOOTING *pandoc_paste-troubleshoot*
+
+1. Plain text is pasted instead of converted format
+   - Confirm that the application you copied from actually provides HTML data.
+   - On Linux (X11), run: >bash
+   
+       xclip -selection clipboard -o -t TARGETS
+<
+   
+     If `text/html` is missing, only plain text is available.
+
+2. macOS only returns plain text
+   - `pbpaste` does not expose RTF/HTML by default. You may need an AppleScript
+     workaround or a specialized tool (e.g., custom scripts or third-party apps).
+
+3. Pandoc not found
+   - Make sure `pandoc` is installed and in your `$PATH`.
+   - Check with: >bash
+       which pandoc
+<
+
+4. Windows subtlety
+   - Some Windows applications place only RTF or plain text on the clipboard.
+   - If no HTML is stored, you’ll get plain text back.
+
+==============================================================================
+CHANGELOG *pandoc_paste-changelog*
+
+Version 1.0.0
+- Initial release with:
+  - Basic `:PandocPaste` command.
+  - Filetype detection (markdown, pandoc, org, latex, or raw fallback).
+  - Default mapping on <leader>p (configurable).
+
+==============================================================================
+ vim:tw=78:ts=8:ft=help:norl:
