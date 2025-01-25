@@ -9,9 +9,21 @@ if exists('g:loaded_pandoc_paste')
 endif
 let g:loaded_pandoc_paste = 1
 
-" If you want to override default commands, define g:pandoc_paste_command
-" in your vimrc before loading this plugin. Otherwise, the function below
-" picks a platform-specific default.
+function! pandoc_paste#IsPipelineRunnable(command) abort
+  " Split on the pipe symbol
+  let l:piped_cmds = split(a:command, '|')
+  for l:cmd in l:piped_cmds
+    " Trim whitespace
+    let l:cmd = trim(l:cmd)
+    " Get first token (the executable name)
+    let l:first_token = matchstr(l:cmd, '^\S\+')
+    " If it’s empty or not executable, we fail
+    if empty(l:first_token) || executable(l:first_token) == 0
+      return 0
+    endif
+  endfor
+  return 1
+endfunction
 
 function! pandoc_paste#GetClipboardCommand(for_html) abort
   if exists('g:pandoc_paste_command') && g:pandoc_paste_command !=# ''
@@ -19,9 +31,6 @@ function! pandoc_paste#GetClipboardCommand(for_html) abort
   endif
 
   if has('macunix')
-    " macOS: pbpaste only returns plain text by default or don't work at all 
-    " (wasn't tested)
-    " More advanced retrieval of text/html might need AppleScript approach
     return 'pbpaste'
   elseif has('unix')
     if a:for_html
@@ -30,9 +39,6 @@ function! pandoc_paste#GetClipboardCommand(for_html) abort
       return 'xclip -selection clipboard -o'
     endif
   elseif has('win32') || has('win64')
-    " Windows: powershell
-    " Note: might not retrieve HTML in all cases or don't work at all (wasn't
-    " tested)
     return 'powershell.exe -noprofile -command Get-Clipboard'
   endif
 
@@ -46,8 +52,6 @@ function! pandoc_paste#GetPandocOutputFormat(ft) abort
         \ 'pandoc': 'markdown_strict',
         \ 'latex': 'latex'
         \ }
-
-  " Return empty for unknown => triggers raw text
   return get(l:formats, a:ft, '')
 endfunction
 
@@ -61,14 +65,18 @@ function! pandoc_paste#Paste() abort
       return
     endif
     let l:cmd .= ' | pandoc -f html -t ' . l:target_fmt
-
   else
-    " Unknown filetype => paste raw text
     let l:cmd = pandoc_paste#GetClipboardCommand(0)
     if empty(l:cmd)
       echoerr '[pandoc_paste] Error: No valid clipboard command found.'
       return
     endif
+  endif
+
+  " Check entire pipeline before execution
+  if !pandoc_paste#IsPipelineRunnable(l:cmd)
+    echoerr '[pandoc_paste] Error: Command not found in pipeline: ' . l:cmd
+    return
   endif
 
   " Execute command, split by newlines, insert after current line
