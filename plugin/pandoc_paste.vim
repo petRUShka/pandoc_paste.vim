@@ -50,7 +50,7 @@ function! pandoc_paste#GetPandocOutputFormat(ft) abort
         \ 'markdown': 'markdown_strict',
         \ 'org': 'org',
         \ 'pandoc': 'markdown_strict',
-        \ 'latex': 'latex'
+        \ 'tex': 'latex'
         \ }
   return get(l:formats, a:ft, '')
 endfunction
