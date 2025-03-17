@@ -36,7 +36,7 @@ function! pandoc_paste#BuildPipeline(target_fmt, use_org_intermediate) abort
     endif
 
     return l:cmd . ' | pandoc -f html -t org | pandoc -f org -t ' . l:final_fmt
-  elseif
+  else
     return l:cmd . ' | pandoc -f html -t ' . a:target_fmt
   endif
 endfunction
